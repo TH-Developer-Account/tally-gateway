@@ -21,7 +21,7 @@ function readPositiveNumberVariable(name, fallback) {
 
 const config = {
   // Loopback by default so nothing is exposed unless you choose to.
-  host: process.env.HOST ?? "127.0.0.1",
+  host: process.env.HOST ?? "0.0.0.0",
   port: readPositiveNumberVariable("PORT", 4000),
   bydApiKey: readRequiredVariable("BYD_API_KEY"),
   agentApiKey: readRequiredVariable("AGENT_API_KEY"),

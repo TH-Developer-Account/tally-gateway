@@ -18,7 +18,7 @@ const jobBroker = createJobBroker({
 const tallyRouter = express.Router();
 
 tallyRouter.get("/health", (request, response) =>
-  response.json({ status: "ok" }),
+  response.status(200).json({ status: "ok" }),
 );
 
 tallyRouter.use(
