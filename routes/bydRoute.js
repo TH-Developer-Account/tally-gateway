@@ -3,11 +3,12 @@ const {
   AgentOfflineError,
   JobTimeoutError,
 } = require("../errors/gatewayErrors");
+const { isValidDealerCode } = require("../lib/isValidDealerCode");
 const { isValidRecordId } = require("../lib/isValidRecordId");
 
-function logLookup(recordId, outcome, startedAt) {
+function logLookup({ dealerCode, recordId, outcome, startedAt }) {
   console.log(
-    `Lookup id="${recordId}" outcome=${outcome} durationMs=${Date.now() - startedAt}`,
+    `Lookup dealer="${dealerCode}" id="${recordId}" outcome=${outcome} durationMs=${Date.now() - startedAt}`,
   );
 }
 
@@ -24,22 +25,35 @@ function respondWithError(response, error) {
   return response.status(502).json({ error: "Tally lookup failed" });
 }
 
-function createBydRouter({ jobBroker, agentId }) {
+function createBydRouter({ jobBroker, agentRegistry }) {
   const router = express.Router();
 
   router.post(
     "/lookup",
     express.json({ limit: "1kb" }),
     async (request, response) => {
-      const recordId = request.body?.id;
+      const { dealerCode, id: recordId } = request.body ?? {};
 
-      if (!isValidRecordId(recordId)) {
-        return response
-          .status(400)
-          .json({ error: 'A valid "id" is required in the JSON body' });
+      if (!isValidDealerCode(dealerCode) || !isValidRecordId(recordId)) {
+        return response.status(400).json({
+          error: 'Valid "dealerCode" and "id" are required in the JSON body',
+        });
       }
 
       const startedAt = Date.now();
+      const agentId = agentRegistry.findAgentIdByDealerCode(dealerCode);
+
+      if (agentId === null) {
+        logLookup({
+          dealerCode,
+          recordId,
+          outcome: "unknown_dealer",
+          startedAt,
+        });
+        return response
+          .status(404)
+          .json({ error: "Unknown dealer code", code: "UNKNOWN_DEALER" });
+      }
 
       try {
         const { found, data } = await jobBroker.submitJob(agentId, {
@@ -47,16 +61,17 @@ function createBydRouter({ jobBroker, agentId }) {
         });
 
         if (!found) {
-          logLookup(recordId, "not_found", startedAt);
-          return response
-            .status(404)
-            .json({ error: "No record found for the given id" });
+          logLookup({ dealerCode, recordId, outcome: "not_found", startedAt });
+          return response.status(404).json({
+            error: "No record found for the given id",
+            code: "RECORD_NOT_FOUND",
+          });
         }
 
-        logLookup(recordId, "found", startedAt);
-        response.json({ id: recordId, data });
+        logLookup({ dealerCode, recordId, outcome: "found", startedAt });
+        response.json({ dealerCode, id: recordId, data });
       } catch (error) {
-        logLookup(recordId, "failed", startedAt);
+        logLookup({ dealerCode, recordId, outcome: "failed", startedAt });
         respondWithError(response, error);
       }
     },

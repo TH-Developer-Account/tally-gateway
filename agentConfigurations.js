@@ -5,8 +5,7 @@
 module.exports = [
   {
     agentId: "th-ats-prd",
-    apiKeyVariableName:
-      "880139a5b5a1afd00cce24e528e4dfced12f1f2cde4e9d91306e54adc82c1ba5",
+    apiKey: "880139a5b5a1afd00cce24e528e4dfced12f1f2cde4e9d91306e54adc82c1ba5",
     dealerCodes: ["D001"],
   },
 ];

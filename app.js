@@ -8,13 +8,12 @@ const {
   handleRequestBodyErrors,
 } = require("./middleware/handleRequestBodyErrors");
 const { createJobBroker } = require("./lib/createJobBroker");
-const { loadAgentRegistry } = require("./lib/loadAgentRegistry");
+const { createAgentRegistry } = require("./lib/createAgentRegistry");
 const { createBydRouter } = require("./routes/bydRoute");
 const { createAgentRouter } = require("./routes/agentRoute");
 
-const agentRegistry = loadAgentRegistry({
-  agentConfigurations,
-  environment: process.env,
+const agentRegistry = createAgentRegistry({
+  agentDefinitions: agentConfigurations,
   bydApiKey: config.bydApiKey,
 });
 console.log(
