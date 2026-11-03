@@ -21,7 +21,7 @@ function readPositiveNumberVariable(name, fallback) {
 
 const config = {
   // Loopback by default so nothing is exposed unless you choose to.
-  host: process.env.GATEWAY_HOST ?? "127.0.0.1",
+  host: process.env.HOST ?? "0.0.0.0",
   port: readPositiveNumberVariable("GATEWAY_PORT", 4000),
   bydApiKey: readRequiredVariable("BYD_API_KEY"),
   // Must be at least 2x the agent's export timeout plus slack, and below the ALB idle timeout.
