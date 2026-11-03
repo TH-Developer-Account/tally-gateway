@@ -1,13 +1,25 @@
 require("dotenv").config();
 const express = require("express");
 const config = require("./config");
+const agentConfigurations = require("./agentConfigurations");
 const { createRequireApiKey } = require("./middleware/requireApiKey");
+const { createRequireAgentApiKey } = require("./middleware/requireAgentApiKey");
 const {
   handleRequestBodyErrors,
 } = require("./middleware/handleRequestBodyErrors");
 const { createJobBroker } = require("./lib/createJobBroker");
+const { loadAgentRegistry } = require("./lib/loadAgentRegistry");
 const { createBydRouter } = require("./routes/bydRoute");
 const { createAgentRouter } = require("./routes/agentRoute");
+
+const agentRegistry = loadAgentRegistry({
+  agentConfigurations,
+  environment: process.env,
+  bydApiKey: config.bydApiKey,
+});
+console.log(
+  `Loaded ${agentRegistry.agentCount} agent(s) covering ${agentRegistry.dealerCodeCount} dealer code(s)`,
+);
 
 const jobBroker = createJobBroker({
   jobTimeoutMs: config.jobTimeoutMs,
@@ -18,19 +30,19 @@ const jobBroker = createJobBroker({
 const tallyRouter = express.Router();
 
 tallyRouter.get("/health", (request, response) =>
-  response.status(200).json({ status: "ok" }),
+  response.json({ status: "ok" }),
 );
 
 tallyRouter.use(
   "/byd",
   createRequireApiKey(config.bydApiKey),
-  createBydRouter({ jobBroker, agentId: config.defaultAgentId }),
+  createBydRouter({ jobBroker, agentRegistry }),
 );
 
 tallyRouter.use(
   "/agent",
-  createRequireApiKey(config.agentApiKey),
-  createAgentRouter({ jobBroker, agentId: config.defaultAgentId }),
+  createRequireAgentApiKey(agentRegistry),
+  createAgentRouter({ jobBroker }),
 );
 
 tallyRouter.use(handleRequestBodyErrors);
