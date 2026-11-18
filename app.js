@@ -2,7 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const config = require("./config");
 const agentConfigurations = require("./agentConfigurations");
-const { createRequireApiKey } = require("./middleware/requireApiKey");
+const { createRequireBasicAuth } = require("./middleware/requireBasicAuth");
 const { createRequireAgentApiKey } = require("./middleware/requireAgentApiKey");
 const {
   handleRequestBodyErrors,
@@ -14,7 +14,7 @@ const { createAgentRouter } = require("./routes/agentRoute");
 
 const agentRegistry = createAgentRegistry({
   agentDefinitions: agentConfigurations,
-  bydApiKey: config.bydApiKey,
+  bydPassword: config.bydPassword,
 });
 console.log(
   `Loaded ${agentRegistry.agentCount} agent(s) covering ${agentRegistry.dealerCodeCount} dealer code(s)`,
@@ -34,7 +34,10 @@ tallyRouter.get("/health", (request, response) =>
 
 tallyRouter.use(
   "/byd",
-  createRequireApiKey(config.bydApiKey),
+  createRequireBasicAuth({
+    username: config.bydUsername,
+    password: config.bydPassword,
+  }),
   createBydRouter({ jobBroker, agentRegistry }),
 );
 
